@@ -1,0 +1,57 @@
+#!/bin/bash
+#
+# --------------------
+# Scratchpad for bspwm
+# --------------------
+#
+# TODO: use variable to store node id instead of file
+
+function create_node()
+{
+	bspc rule -a \* -o state=floating
+	$TERMINAL &
+}
+
+id=$(cat /tmp/scratchid)
+
+#echo "ID = $id"
+
+if [ -z "$id" ]; then
+#	echo ' >>> IS EMPTY'
+	id=$(bspc query -N -n focused.floating)
+	if [ -z "$id" ]; then
+		create_node
+		sleep 1
+		bspc query -N -n focused.floating > /tmp/scratchid
+	else
+		echo $id > /tmp/scratchid
+		bspc node $id --flag hidden
+	fi
+else
+#	echo " >>> ISN'T EMPTY"
+	if [[ "$(bspc node $id.floating)" ]]
+	then
+		# Toggle hidden state
+		if [[ $(bspc query -n $id.floating.focused) ]] && [[ $(bspc query -D -n $id) -eq $(bspc query -D -d focused) ]]; then
+			# toggle hidden state
+			bspc node $id --flag hidden
+		else
+			if [[ $(bspc query -D -n $id) -eq $(bspc query -D -d focused) ]]; then
+				bspc node $id --flag hidden -f
+			else
+				if [[ $(bspc query -N -n $id.hidden) ]]; then
+					bspc node $id --flag hidden=off -d $(bspc query -D -d focused) -f
+				else
+					bspc node $id -d $(bspc query -D -d focused) -f
+				fi
+			fi
+		fi
+	else
+#		echo " >>> NODE ISN'T AVAILABLE"
+#		echo " >>> CREATE A NEW ONE"
+		create_node
+		sleep 1
+		bspc query -N -n focused.floating > /tmp/scratchid
+	fi
+
+fi

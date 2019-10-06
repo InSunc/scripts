@@ -1,0 +1,34 @@
+#!/bin/bash
+
+opt=$(echo -e "reload\nlock\nexit\nsuspend\nshutdown\nreboot" | eval $DMENU 'System:')
+
+case $opt in
+
+	'reload')
+		pkill -USR1 -x sxhkd
+		$HOME/.config/bspwm/bspwmrc
+		;;
+
+	'suspend')
+		~/scripts/wm/lock/lock.sh
+		systemctl suspend
+		;;
+
+	'shutdown')
+		systemctl poweroff -i
+		# add -i option to ignore inhibitors
+		;;
+
+	'reboot')
+		systemctl reboot
+		;;
+
+	'lock')
+		~/scripts/wm/lock/lock.sh
+		;;
+
+
+	'exit')
+		bspc quit
+		;;
+esac

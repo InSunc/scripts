@@ -1,0 +1,52 @@
+#!/bin/bash
+
+# Script for brightness control.
+#
+# Dependency: dmenu
+# $DMENU -> dmenu with predefined flags
+
+max_brightness=$(cat /sys/class/backlight/intel_backlight/max_brightness)
+brightness=$(cat /sys/class/backlight/intel_backlight/brightness)
+
+if [ "$1" = '-h' ]; then
+		echo 'SYNTAX:'
+		echo -e '\t brightness +/-<value> \t\t increment/decrement by indicated value'
+		echo -e '\t brightness <percentage> \t set brightness level to indicated percentage'
+		exit 0
+fi
+
+case ${1:0:1} in
+	'+')
+		if (($brightness+${1:1} < $max_brightness)); then
+			let "brightness=$brightness+${1:1}"
+			sudo echo $brightness > /sys/class/backlight/intel_backlight/brightness
+		fi
+		;;
+
+	'-')
+		if (($brightness-${1:1} > 0)); then
+			let "brightness=$brightness-${1:1}"
+			sudo echo $brightness > /sys/class/backlight/intel_backlight/brightness
+		fi
+		;;
+
+	*)
+		if [ -z "$1" ]; then
+			percentage=$(echo | $DMENU 'Brightness' | tr '[:lower:]' '[:upper:]' | sed 's/[A-Z]//g')
+		else
+			percentage=$(sudo echo $1 | tr '[:lower:]' '[:upper:]' | sed 's/[A-Z]//g')
+		fi
+
+		echo "Value: $percentage"
+
+		if [ -z "$percentage" ] || [ "$percentage" -lt 0 ] || [ "$percentage" -gt 100 ]; then
+				echo '[!] Invalid value!'
+				exit 1
+		fi
+
+		brightness=$((percentage * max_brightness / 100))
+
+		sudo echo $brightness > /sys/class/backlight/intel_backlight/brightness
+		echo $brightness
+		;;
+esac
